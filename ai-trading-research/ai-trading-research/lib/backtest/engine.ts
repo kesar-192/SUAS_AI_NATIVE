@@ -10,7 +10,7 @@
 //   3. Costs are applied per side (entry + exit), not once — matches how
 //      slippage/brokerage actually work in practice.
 import { StructuredExperiment } from "@/lib/schemas/experiment";
-import { BacktestOutput, BacktestMetrics, Trade, EquityPoint } from "@/lib/schemas/backtest";
+import { BacktestOutput, BacktestMetrics, Trade, EquityPoint, ValidationWindow } from "@/lib/schemas/backtest";
 import { generateNiftySeries, OhlcBar } from "@/lib/mock-data/nifty";
 
 function round2(n: number): number {
@@ -142,8 +142,13 @@ function buildEquityCurve(trades: Trade[]): EquityPoint[] {
   return curve;
 }
 
-export function runBacktest(experiment: StructuredExperiment): BacktestOutput {
-  const bars = generateNiftySeries(experiment.testPeriod.start, experiment.testPeriod.end);
+function runPeriod(
+  experiment: StructuredExperiment,
+  start: string,
+  end: string,
+  sourceBars: OhlcBar[]
+): { metrics: BacktestMetrics; trades: Trade[]; equityCurve: EquityPoint[] } {
+  const bars = sourceBars.filter((bar) => bar.date >= start && bar.date <= end);
   const holdDays = holdingDaysFrom(experiment);
   const costPerSide =
     (experiment.costAssumptions.slippagePct + experiment.costAssumptions.transactionCostPct) / 100;
@@ -178,10 +183,46 @@ export function runBacktest(experiment: StructuredExperiment): BacktestOutput {
     i++;
   }
 
+  return { metrics: computeMetrics(trades), trades, equityCurve: buildEquityCurve(trades) };
+}
+
+function splitTestPeriod(experiment: StructuredExperiment): { splitDate: string; outStart: string } {
+  const start = new Date(experiment.testPeriod.start);
+  const end = new Date(experiment.testPeriod.end);
+  const midpoint = new Date(start.getTime() + (end.getTime() - start.getTime()) * 0.7);
+  const splitDate = midpoint.toISOString().slice(0, 10);
+  const outStartDate = new Date(midpoint);
+  outStartDate.setDate(outStartDate.getDate() + 1);
+  return { splitDate, outStart: outStartDate.toISOString().slice(0, 10) };
+}
+
+function makeValidationWindow(
+  label: ValidationWindow["label"],
+  start: string,
+  end: string,
+  result: ReturnType<typeof runPeriod>
+): ValidationWindow {
+  return { label, start, end, metrics: result.metrics };
+}
+
+export function runBacktest(experiment: StructuredExperiment): BacktestOutput {
+  const sourceBars = generateNiftySeries(experiment.testPeriod.start, experiment.testPeriod.end);
+  const full = runPeriod(experiment, experiment.testPeriod.start, experiment.testPeriod.end, sourceBars);
+  const { splitDate, outStart } = splitTestPeriod(experiment);
+  const inSample = runPeriod(experiment, experiment.testPeriod.start, splitDate, sourceBars);
+  const outOfSample = runPeriod(experiment, outStart, experiment.testPeriod.end, sourceBars);
+
   return {
-    metrics: computeMetrics(trades),
-    trades,
-    equityCurve: buildEquityCurve(trades),
+    metrics: full.metrics,
+    trades: full.trades,
+    equityCurve: full.equityCurve,
+    validation: {
+      splitDate,
+      windows: [
+        makeValidationWindow("in_sample", experiment.testPeriod.start, splitDate, inSample),
+        makeValidationWindow("out_of_sample", outStart, experiment.testPeriod.end, outOfSample),
+      ],
+    },
     dataQualityNotes: [
       "Prices are simulated (seeded random walk), not real NIFTY data — for workflow demonstration only.",
       "Volatility filters use a simplified rolling-std-dev heuristic, not a validated regime model.",

@@ -6,6 +6,7 @@
 import { RotateCcw } from "lucide-react";
 import { BacktestOutput } from "@/lib/schemas/backtest";
 import { StructuredExperiment } from "@/lib/schemas/experiment";
+import { RiskRegister } from "@/components/RiskRegister";
 
 interface LearnStepProps {
   experiment: StructuredExperiment;
@@ -46,10 +47,24 @@ export function LearnStep({ experiment, backtest, onReset }: LearnStepProps) {
             </li>
             <li>Data is simulated, not real NIFTY history — treat as a workflow demo, not a market finding.</li>
             <li>No slippage-on-wide-spread or execution failure modeling — real costs may run higher.</li>
-            <li>Single test period only — no out-of-sample or walk-forward validation was performed.</li>
+            <li>Out-of-sample results are shown separately, but this is not a walk-forward or statistical significance test.</li>
           </ul>
         </div>
       </div>
+
+      <div className="border border-zinc-800 rounded-xl p-4 bg-zinc-900/30 mb-6">
+        <h3 className="text-xs uppercase tracking-wide text-zinc-400 font-mono mb-3">Validation readout</h3>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          {backtest.validation.windows.map((window) => (
+            <div key={window.label}>
+              <p className="text-zinc-500 text-xs font-mono">{window.label === "in_sample" ? "In-sample" : "Out-of-sample"}</p>
+              <p className="text-zinc-200 mt-1">{window.metrics.totalTrades} trades, {window.metrics.totalReturnPct}% return</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <RiskRegister backtest={backtest} />
 
       <div className="border border-zinc-800 rounded-xl p-4 bg-zinc-900/30 mb-6">
         <h3 className="text-xs uppercase tracking-wide text-zinc-400 font-mono mb-2">Suggested next questions</h3>

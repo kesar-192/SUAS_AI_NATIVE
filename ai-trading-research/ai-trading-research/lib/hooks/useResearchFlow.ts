@@ -7,7 +7,6 @@
 import { useCallback, useState } from "react";
 import { StructuredExperiment, Assumption } from "@/lib/schemas/experiment";
 import { BacktestOutput } from "@/lib/schemas/backtest";
-import { runBacktest } from "@/lib/backtest/engine";
 
 export type FlowStep = "ASK" | "CLARIFY" | "DEFINE" | "TEST" | "LEARN";
 
@@ -103,17 +102,23 @@ export function useResearchFlow() {
     });
   }, []);
 
-  const runTest = useCallback(() => {
-    setState((s) => {
-      if (!s.experiment) return s;
-      // Pure client-side computation — no network round trip needed for a
-      // deterministic function over mock data. (See app/api/backtest/route.ts
-      // for the equivalent server-side path, kept for parity / future use
-      // with a real data source.)
-      const backtest = runBacktest(s.experiment);
-      return { ...s, backtest, step: "TEST" };
-    });
-  }, []);
+  const runTest = useCallback(async () => {
+    if (!state.experiment) return;
+    setState((s) => ({ ...s, isLoading: true, error: null }));
+
+    try {
+      const res = await fetch("/api/backtest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ experiment: state.experiment }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Backtest failed.");
+      setState((s) => ({ ...s, isLoading: false, backtest: data.backtest as BacktestOutput, step: "TEST" }));
+    } catch (err) {
+      setState((s) => ({ ...s, isLoading: false, error: (err as Error).message }));
+    }
+  }, [state.experiment]);
 
   const proceedToLearn = useCallback(() => {
     setState((s) => ({ ...s, step: "LEARN" }));

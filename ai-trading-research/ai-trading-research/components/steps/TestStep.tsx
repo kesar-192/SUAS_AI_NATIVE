@@ -17,7 +17,9 @@ interface Tile {
 }
 
 export function TestStep({ backtest, onContinue }: TestStepProps) {
-  const { metrics, equityCurve } = backtest;
+  const { metrics, equityCurve, validation } = backtest;
+  const [inSample, outOfSample] = validation.windows;
+  const lowSample = metrics.totalTrades < 20;
 
   const tiles: Tile[] = [
     { label: "Win Rate", value: `${metrics.winRate}%` },
@@ -59,6 +61,36 @@ export function TestStep({ backtest, onContinue }: TestStepProps) {
             </p>
           </div>
         ))}
+      </div>
+
+      {lowSample && (
+        <div className="border border-amber-900/60 bg-amber-950/20 rounded-lg p-3 mb-4 text-sm text-amber-300">
+          <strong>Small sample warning:</strong> {metrics.totalTrades} full-period trades is below the 20-trade review threshold. Sharpe and win rate are unstable estimates, not proof of an edge.
+        </div>
+      )}
+
+      <div className="border border-zinc-800 rounded-xl bg-zinc-900/30 p-4 mb-6">
+        <div className="flex items-baseline justify-between gap-4 mb-3">
+          <h3 className="text-xs uppercase tracking-wide text-zinc-400 font-mono">Out-of-sample check</h3>
+          <span className="text-[10px] text-zinc-600 font-mono">split after {validation.splitDate}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {[inSample, outOfSample].map((window) => (
+            <div key={window.label} className="border border-zinc-800 rounded-lg p-3">
+              <p className="text-xs text-zinc-300 font-mono">{window.label === "in_sample" ? "In-sample" : "Out-of-sample"}</p>
+              <p className="text-[10px] text-zinc-600 font-mono mt-1">{window.start} to {window.end}</p>
+              <p className="text-sm text-zinc-200 mt-3">{window.metrics.totalTrades} trades</p>
+              <p className={window.metrics.totalReturnPct >= 0 ? "text-emerald-400 text-sm" : "text-red-400 text-sm"}>
+                {window.metrics.totalReturnPct}% return · Sharpe {window.metrics.sharpeRatio}
+              </p>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-zinc-500 mt-3">
+          {inSample.metrics.totalReturnPct >= 0 && outOfSample.metrics.totalReturnPct >= 0
+            ? "The return direction is consistent across both windows, but sample size and simulated data still limit confidence."
+            : "The return direction does not hold in both windows; treat the full-period result as inconclusive."}
+        </p>
       </div>
 
       <button

@@ -29,14 +29,26 @@ export const EquityPointSchema = z.object({
   equity: z.number(),
 });
 
+export const ValidationWindowSchema = z.object({
+  label: z.enum(["in_sample", "out_of_sample"]),
+  start: z.string(),
+  end: z.string(),
+  metrics: BacktestMetricsSchema,
+});
+
 export const BacktestOutputSchema = z.object({
   metrics: BacktestMetricsSchema,
   trades: z.array(TradeSchema),
   equityCurve: z.array(EquityPointSchema),
+  validation: z.object({
+    splitDate: z.string(),
+    windows: z.array(ValidationWindowSchema).length(2),
+  }),
   dataQualityNotes: z.array(z.string()).describe("Caveats: sample size, mock data, look-ahead risk, etc."),
 });
 
 export type Trade = z.infer<typeof TradeSchema>;
 export type BacktestMetrics = z.infer<typeof BacktestMetricsSchema>;
 export type EquityPoint = z.infer<typeof EquityPointSchema>;
+export type ValidationWindow = z.infer<typeof ValidationWindowSchema>;
 export type BacktestOutput = z.infer<typeof BacktestOutputSchema>;
