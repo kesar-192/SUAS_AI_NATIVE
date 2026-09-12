@@ -1,0 +1,40 @@
+/* app/globals.css */
+/* [PERSONALLY DESIGNED] Bloomberg-terminal palette was an explicit brief
+   requirement, not a default reach: near-black zinc base, emerald as the
+   single "live data" accent color, amber reserved specifically for
+   risk/caveat signals (drawdown, cost drag, limitations) so it carries
+   consistent meaning everywhere it appears rather than being decorative. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+  --border: 240 4% 16%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* Visible keyboard focus, kept subtle but real */
+:focus-visible {
+  outline: 2px solid #34d399;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
