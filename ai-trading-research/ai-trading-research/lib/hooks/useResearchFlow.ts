@@ -39,7 +39,13 @@ export function useResearchFlow() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question }),
       });
-      const data = await res.json();
+      const responseText = await res.text();
+      let data: { error?: string; experiment?: StructuredExperiment };
+      try {
+        data = JSON.parse(responseText) as { error?: string; experiment?: StructuredExperiment };
+      } catch {
+        throw new Error(`The parse service returned an invalid response (HTTP ${res.status}).`);
+      }
       if (!res.ok) throw new Error(data.error ?? "Failed to parse question.");
 
       setState((s) => ({
@@ -124,6 +130,28 @@ export function useResearchFlow() {
     setState((s) => ({ ...s, step: "LEARN" }));
   }, []);
 
+  const startFollowUp = useCallback((question: string) => {
+    setState((s) => ({
+      ...s,
+      question,
+      step: "ASK",
+      error: null,
+    }));
+  }, []);
+
+  const goBack = useCallback(() => {
+    setState((s) => {
+      const previousStep: Record<Exclude<FlowStep, "ASK">, FlowStep> = {
+        CLARIFY: "ASK",
+        DEFINE: "CLARIFY",
+        TEST: "DEFINE",
+        LEARN: "TEST",
+      };
+
+      return s.step === "ASK" ? s : { ...s, step: previousStep[s.step] };
+    });
+  }, []);
+
   const reset = useCallback(() => setState(initialState), []);
 
   return {
@@ -135,6 +163,8 @@ export function useResearchFlow() {
     proceedToDefine,
     runTest,
     proceedToLearn,
+    startFollowUp,
+    goBack,
     reset,
   };
 }

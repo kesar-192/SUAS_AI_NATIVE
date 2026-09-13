@@ -15,10 +15,11 @@ interface AskStepProps {
   onSubmit: (question: string) => void;
   isLoading: boolean;
   error: string | null;
+  initialQuestion?: string;
 }
 
-export function AskStep({ onSubmit, isLoading, error }: AskStepProps) {
-  const [value, setValue] = useState("");
+export function AskStep({ onSubmit, isLoading, error, initialQuestion = "" }: AskStepProps) {
+  const [value, setValue] = useState(initialQuestion);
 
   const handleSubmit = () => {
     if (value.trim() && !isLoading) onSubmit(value.trim());

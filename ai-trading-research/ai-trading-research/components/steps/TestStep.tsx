@@ -2,12 +2,14 @@
 // [AI-GENERATED CHART SETUP, PERSONALLY DESIGNED metric selection]
 "use client";
 
+import { ArrowLeft } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { BacktestOutput } from "@/lib/schemas/backtest";
 
 interface TestStepProps {
   backtest: BacktestOutput;
   onContinue: () => void;
+  onBack: () => void;
 }
 
 interface Tile {
@@ -16,7 +18,7 @@ interface Tile {
   warn?: boolean;
 }
 
-export function TestStep({ backtest, onContinue }: TestStepProps) {
+export function TestStep({ backtest, onContinue, onBack }: TestStepProps) {
   const { metrics, equityCurve, validation } = backtest;
   const [inSample, outOfSample] = validation.windows;
   const lowSample = metrics.totalTrades < 20;
@@ -32,6 +34,9 @@ export function TestStep({ backtest, onContinue }: TestStepProps) {
 
   return (
     <div className="max-w-2xl mx-auto">
+      <button onClick={onBack} className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 mb-4 transition-colors">
+        <ArrowLeft size={14} /> Back
+      </button>
       <h2 className="text-lg font-semibold text-zinc-100 mb-4">Backtest Results</h2>
 
       <div className="h-56 mb-6 border border-zinc-800 rounded-xl bg-zinc-900/30 p-4">

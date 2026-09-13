@@ -5,7 +5,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Pencil, Check } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Pencil, Check } from "lucide-react";
 import { StructuredExperiment, Assumption, ClarificationQuestion } from "@/lib/schemas/experiment";
 
 interface ClarifyStepProps {
@@ -14,6 +14,7 @@ interface ClarifyStepProps {
   onResolveClarification: (id: string, value: string) => void;
   canProceed: boolean;
   onContinue: () => void;
+  onBack: () => void;
 }
 
 export function ClarifyStep({
@@ -22,9 +23,13 @@ export function ClarifyStep({
   onResolveClarification,
   canProceed,
   onContinue,
+  onBack,
 }: ClarifyStepProps) {
   return (
     <div className="max-w-2xl mx-auto">
+      <button onClick={onBack} className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 mb-4 transition-colors">
+        <ArrowLeft size={14} /> Back
+      </button>
       <h2 className="text-lg font-semibold text-zinc-100 mb-1">Let&apos;s confirm the details</h2>
       <p className="text-zinc-500 text-sm mb-6">
         Original question: <span className="text-zinc-400 italic">&ldquo;{experiment.originalQuestion}&rdquo;</span>

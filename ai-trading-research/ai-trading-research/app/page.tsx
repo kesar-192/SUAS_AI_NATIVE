@@ -24,7 +24,12 @@ export default function Home() {
       <StepProgress current={flow.step} />
 
       {flow.step === "ASK" && (
-        <AskStep onSubmit={flow.submitQuestion} isLoading={flow.isLoading} error={flow.error} />
+        <AskStep
+          onSubmit={flow.submitQuestion}
+          isLoading={flow.isLoading}
+          error={flow.error}
+          initialQuestion={flow.question}
+        />
       )}
 
       {flow.step === "CLARIFY" && flow.experiment && (
@@ -34,19 +39,26 @@ export default function Home() {
           onResolveClarification={flow.resolveClarification}
           canProceed={flow.canProceedToDefine()}
           onContinue={flow.proceedToDefine}
+          onBack={flow.goBack}
         />
       )}
 
       {flow.step === "DEFINE" && flow.experiment && (
-        <DefineStep experiment={flow.experiment} onRunTest={flow.runTest} />
+        <DefineStep experiment={flow.experiment} onRunTest={flow.runTest} onBack={flow.goBack} />
       )}
 
       {flow.step === "TEST" && flow.backtest && (
-        <TestStep backtest={flow.backtest} onContinue={flow.proceedToLearn} />
+        <TestStep backtest={flow.backtest} onContinue={flow.proceedToLearn} onBack={flow.goBack} />
       )}
 
       {flow.step === "LEARN" && flow.experiment && flow.backtest && (
-        <LearnStep experiment={flow.experiment} backtest={flow.backtest} onReset={flow.reset} />
+        <LearnStep
+          experiment={flow.experiment}
+          backtest={flow.backtest}
+          onReset={flow.reset}
+          onBack={flow.goBack}
+          onAskNext={flow.startFollowUp}
+        />
       )}
     </main>
   );

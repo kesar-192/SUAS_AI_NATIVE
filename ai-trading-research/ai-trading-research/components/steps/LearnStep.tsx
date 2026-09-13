@@ -3,7 +3,7 @@
 // the brief's "distinguish what the data shows vs. what the system believes"
 // requirement — kept as two visually separate columns so it can't be skimmed
 // past as one blended paragraph.
-import { RotateCcw } from "lucide-react";
+import { ArrowLeft, RotateCcw } from "lucide-react";
 import { BacktestOutput } from "@/lib/schemas/backtest";
 import { StructuredExperiment } from "@/lib/schemas/experiment";
 import { RiskRegister } from "@/components/RiskRegister";
@@ -12,14 +12,33 @@ interface LearnStepProps {
   experiment: StructuredExperiment;
   backtest: BacktestOutput;
   onReset: () => void;
+  onBack: () => void;
+  onAskNext: (question: string) => void;
 }
 
-export function LearnStep({ experiment, backtest, onReset }: LearnStepProps) {
+export function LearnStep({ experiment, backtest, onReset, onBack, onAskNext }: LearnStepProps) {
   const { metrics } = backtest;
   const edgeDirection = metrics.totalReturnPct > 0 ? "positive" : "negative";
+  const suggestedQuestions = [
+    metrics.totalTrades === 0
+      ? "What happens if we relax the entry threshold?"
+      : `How sensitive is the result to a ${experiment.entry.value}% entry threshold?`,
+    metrics.totalTrades < 20
+      ? "What happens if we widen the test period?"
+      : "Does the edge hold across another date range?",
+    experiment.filters.some((filter) => /volatil/i.test(filter))
+      ? "What happens without the volatility filter?"
+      : "Does adding a high-volatility filter improve returns?",
+    metrics.maxDrawdownPct > 10
+      ? "Does adding a stop-loss reduce drawdown?"
+      : "How does a two-week holding period compare?",
+  ];
 
   return (
     <div className="max-w-2xl mx-auto">
+      <button onClick={onBack} className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 mb-4 transition-colors">
+        <ArrowLeft size={14} /> Back
+      </button>
       <h2 className="text-lg font-semibold text-zinc-100 mb-6">What did we learn?</h2>
 
       <div className="grid grid-cols-2 gap-4 mb-6">
@@ -68,11 +87,18 @@ export function LearnStep({ experiment, backtest, onReset }: LearnStepProps) {
 
       <div className="border border-zinc-800 rounded-xl p-4 bg-zinc-900/30 mb-6">
         <h3 className="text-xs uppercase tracking-wide text-zinc-400 font-mono mb-2">Suggested next questions</h3>
-        <ul className="space-y-1 text-sm text-zinc-300 list-disc list-inside">
-          <li>Does the edge hold across a longer or different test period?</li>
-          <li>How sensitive is the result to the entry threshold ({experiment.entry.value})?</li>
-          <li>Does adding a stop-loss change the drawdown profile materially?</li>
-        </ul>
+        <p className="text-xs text-zinc-500 mb-3">Select one to return to ASK with a focused follow-up.</p>
+        <div className="grid gap-2">
+          {suggestedQuestions.map((question) => (
+            <button
+              key={question}
+              onClick={() => onAskNext(question)}
+              className="text-left text-sm text-zinc-300 border border-zinc-800 rounded-lg px-3 py-2 hover:border-emerald-700 hover:text-emerald-300 transition-colors"
+            >
+              {question}
+            </button>
+          ))}
+        </div>
       </div>
 
       <button
